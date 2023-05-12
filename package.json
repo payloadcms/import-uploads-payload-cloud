@@ -8,7 +8,7 @@
     "import-uploads:prod": "ts-node ./src/import-uploads.ts --dry-run false"
   },
   "dependencies": {
-    "@payloadcms/plugin-cloud": "^1.0.0",
+    "@payloadcms/plugin-cloud": "^1.0.1",
     "dotenv": "^8.2.0",
     "file-type": "16.5.4"
   },
