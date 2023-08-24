@@ -5,14 +5,19 @@
   "license": "MIT",
   "scripts": {
     "import-uploads": "ts-node ./src/import-uploads.ts",
-    "import-uploads:prod": "ts-node ./src/import-uploads.ts --dry-run false"
+    "import-uploads:prod": "ts-node ./src/import-uploads.ts --dry-run=false"
   },
   "dependencies": {
+    "@inquirer/prompts": "^3.0.3",
     "@payloadcms/plugin-cloud": "^1.0.1",
     "dotenv": "^8.2.0",
-    "file-type": "16.5.4"
+    "file-type": "16.5.4",
+    "minimist": "^1.2.8"
   },
   "devDependencies": {
+    "@types/minimist": "^1.2.2",
+    "@types/node": "^20.5.4",
+    "prettier": "^3.0.2",
     "ts-node": "^9.1.1",
     "typescript": "^4.8.4"
   }
