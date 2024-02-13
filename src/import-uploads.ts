@@ -21,7 +21,9 @@ const main = async () => {
     return
   }
 
-  const uploadSlug = await input({ message: 'Enter upload slug. Reference your Payload config' })
+  const uploadSlug = await input({
+    message: 'Enter upload slug. Reference your Payload config. (usually "media")',
+  })
   if (!uploadSlug) {
     console.log('No uploadSlug provided')
     return
@@ -47,41 +49,44 @@ const main = async () => {
 
   const { storageClient, identityID } = await getStorageClient()
 
-  // TODO: Chunk this out into batches
-  try {
-    await Promise.all(
-      files.map(async fileName => {
-        const logPrefix = `${DRY_RUN ? '[DRY RUN]' : ''} ${fileName}:`
-        try {
-          console.log(`${logPrefix} Uploading...`)
-          if (DRY_RUN) {
-            console.log(`${logPrefix} Skipped upload`)
-            return
-          } else {
-            // get buffer of the file
-            const fullFilePath = path.resolve(importUploadDir, fileName)
-            const fileBuffer = fs.readFileSync(fullFilePath)
-            const mimeType = (await fromBuffer(fileBuffer)).mime
-            await storageClient.putObject({
-              Bucket: process.env.PAYLOAD_CLOUD_BUCKET,
-              Key: createKey({ collection: uploadSlug, filename: fileName, identityID }),
-              Body: fileBuffer,
-              ContentType: mimeType,
-            })
-            console.log(`${logPrefix} Uploaded`)
+  const batches = chunk(files, 5)
+
+  for (const batch of batches) {
+    try {
+      await Promise.all(
+        batch.map(async fileName => {
+          const logPrefix = `${DRY_RUN ? '[DRY RUN]' : ''} ${fileName}:`
+          try {
+            console.log(`${logPrefix} Uploading...`)
+            if (DRY_RUN) {
+              console.log(`${logPrefix} Skipped upload`)
+              return
+            } else {
+              // get buffer of the file
+              const fullFilePath = path.resolve(importUploadDir, fileName)
+              const fileBuffer = fs.readFileSync(fullFilePath)
+              const mimeType = (await fromBuffer(fileBuffer)).mime
+              await storageClient.putObject({
+                Bucket: process.env.PAYLOAD_CLOUD_BUCKET,
+                Key: createKey({ collection: uploadSlug, filename: fileName, identityID }),
+                Body: fileBuffer,
+                ContentType: mimeType,
+              })
+              console.log(`${logPrefix} Uploaded`)
+            }
+          } catch (err) {
+            console.error(`File ${fileName} failed to create`)
+            console.error(err)
+          } finally {
+            console.log(`${logPrefix} Upload complete!`)
           }
-        } catch (err) {
-          console.error(`File ${fileName} failed to create`)
-          console.error(err)
-        } finally {
-          console.log(`${logPrefix} Upload complete!`)
-        }
-      }),
-    )
-  } catch (err) {
-    console.log('Unable to upload file')
-    console.error(err)
-    process.exit(0)
+        }),
+      )
+    } catch (err) {
+      console.log(`Unable to upload file from batch: ${batch.map(f => f).join(', ')}`)
+      console.error(err)
+      process.exit(0)
+    }
   }
 
   console.log('Upload completed!')
@@ -98,6 +103,22 @@ function parseArgs(): { DRY_RUN: boolean } {
   }
   const DRY_RUN = args[dryRunIndex] === 'false' ? false : true
   return { DRY_RUN }
+}
+
+function chunk<T>(array: T[], size = 5): T[][] {
+  size = Math.max(size, 0)
+  const length = array == null ? 0 : array.length
+  if (!length || size < 1) {
+    return []
+  }
+  let index = 0
+  let resIndex = 0
+  const result = new Array(Math.ceil(length / size))
+
+  while (index < length) {
+    result[resIndex++] = array.slice(index, (index += size))
+  }
+  return result
 }
 
 // Validate all required envs
