@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^3.0.3",
-    "@payloadcms/plugin-cloud": "^1.0.1",
+    "@payloadcms/plugin-cloud": "^3.0.0",
     "dotenv": "^8.2.0",
     "file-type": "16.5.4",
     "minimist": "^1.2.8"
